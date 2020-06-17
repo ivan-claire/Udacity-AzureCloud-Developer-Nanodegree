@@ -1,0 +1,116 @@
+data:
+  FUNCTIONS_WORKER_RUNTIME: cHl0aG9u
+  AzureWebJobsStorage: ''
+apiVersion: v1
+kind: Secret
+metadata:
+  name: neighborly
+  namespace: default
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: neighborly-http
+  namespace: default
+  annotations:
+    osiris.deislabs.io/enabled: "true"
+    osiris.deislabs.io/deployment: "neighborly-http"
+spec:
+  selector:
+    app: neighborly-http
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: neighborly-http
+  namespace: default
+  labels:
+    app: neighborly-http
+  annotations:
+    osiris.deislabs.io/enabled: "true"
+    osiris.deislabs.io/minReplicas: "1"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: neighborly-http
+  template:
+    metadata:
+      labels:
+        app: neighborly-http
+    spec:
+      containers:
+      - name: neighborly-http
+        image: 127.0.0.1:5000/neighborlyimage
+        ports:
+        - containerPort: 80
+        env:
+        - name: AzureFunctionsJobHost__functions__0
+          value: getPosts
+        - name: AzureFunctionsJobHost__functions__1
+          value: updateAdvertisement
+        - name: AzureFunctionsJobHost__functions__2
+          value: getPost
+        - name: AzureFunctionsJobHost__functions__3
+          value: deleteAdvertisement
+        - name: AzureFunctionsJobHost__functions__4
+          value: getAdvertisements
+        - name: AzureFunctionsJobHost__functions__5
+          value: getAdvertisement
+        - name: AzureFunctionsJobHost__functions__6
+          value: createAdvertisement
+        envFrom:
+        - secretRef:
+            name: neighborly
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: neighborly
+  namespace: default
+  labels:
+    app: neighborly
+spec:
+  selector:
+    matchLabels:
+      app: neighborly
+  template:
+    metadata:
+      labels:
+        app: neighborly
+    spec:
+      containers:
+      - name: neighborly
+        image: 127.0.0.1:5000/neighborlyimage
+        env:
+        - name: AzureFunctionsJobHost__functions__0
+          value: eventHubTrigger
+        envFrom:
+        - secretRef:
+            name: neighborly
+---
+apiVersion: keda.k8s.io/v1alpha1
+kind: ScaledObject
+metadata:
+  name: neighborly
+  namespace: default
+  labels:
+    deploymentName: neighborly
+spec:
+  scaleTargetRef:
+    deploymentName: neighborly
+  triggers:
+  - type: eventgridtrigger
+    metadata:
+      type: eventGridTrigger
+      name: event
+      direction: in
+      eventHubName: testhub
+      connection: Endpoint=sb://udacityneighborly.servicebus.windows.net/;SharedAccessKeyName=allpolicy;SharedAccessKey=LOxUOkN13xN038T1VoSsmaTt4s7vq/+VCzduS5/nH9A=;EntityPath=testhub
+---
+

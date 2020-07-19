@@ -10,10 +10,17 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
-
+- script: Setup Python 3.6!
+  displayName: 'Setup Python 3.6'
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '3.6'
 - script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+    make install
+  displayName: 'Install dependencies'  
+- script: |
+    make lint
+  displayName: 'Linting with pylint'
+- script: |
+    make test
+  displayName: 'Test with pytest'

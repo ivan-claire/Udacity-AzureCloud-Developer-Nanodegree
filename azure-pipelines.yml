@@ -11,7 +11,7 @@ pool:
 
 steps:
 - script: |
-  echo "setting up python"
+    echo "setting up python"
   displayName: 'Setup Python 3.6'
 - task: UsePythonVersion@0
   inputs:

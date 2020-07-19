@@ -10,7 +10,8 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-- script: Setup Python 3.6!
+- script: |
+  echo "setting up python"
   displayName: 'Setup Python 3.6'
 - task: UsePythonVersion@0
   inputs:
